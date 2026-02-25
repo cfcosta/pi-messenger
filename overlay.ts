@@ -51,8 +51,7 @@ export interface OverlayCallbacks {
 
 export class MessengerOverlay implements Component, Focusable {
   get width(): number {
-    const cols = process.stdout.columns ?? 90;
-    return Math.min(100, Math.max(40, cols - 2));
+    return Math.max(40, process.stdout.columns ?? 90);
   }
   focused = false;
 

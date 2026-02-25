@@ -8,7 +8,6 @@ import {
   buildSelfRegistration,
   coloredAgentName,
   computeStatus,
-  STATUS_INDICATORS,
   agentHasTask,
   type Dirs,
   type MessengerState,
@@ -35,6 +34,10 @@ import { getLobbyWorkerCount } from "./crew/lobby.js";
 import type { CrewViewState } from "./overlay-actions.js";
 
 const STATUS_ICONS: Record<string, string> = { done: "✓", in_progress: "●", todo: "○", blocked: "✗" };
+
+// Overlay-safe agent status indicators — avoids ambiguous-width emoji
+// that cause misalignment in terminal rendering
+const AGENT_INDICATORS: Record<string, string> = { active: "*", idle: "~", away: ".", stuck: "!" };
 
 function formatElapsed(ms: number): string {
   const s = Math.floor(Math.max(0, ms) / 1000);
@@ -135,7 +138,7 @@ export function renderStatusBar(theme: Theme, cwd: string, width: number): strin
     const elapsedMs = Date.now() - new Date(autonomousState.startedAt).getTime();
     const mm = Math.floor(elapsedMs / 60000).toString();
     const ss = Math.floor((elapsedMs % 60000) / 1000).toString().padStart(2, "0");
-    parts.push(`⏱ ${mm}:${ss}`);
+    parts.push(`${mm}:${ss}`);
   }
   return truncateToWidth(`${base} │ ${theme.fg("accent", parts.join(" "))}`, width);
 }
@@ -304,7 +307,7 @@ export function renderAgentsRow(
   const seen = new Set<string>();
 
   const self = buildSelfRegistration(state);
-  rowParts.push(`🟢 You (${idleLabel(self.activity?.lastActivityAt ?? self.startedAt)})`);
+  rowParts.push(`* You (${idleLabel(self.activity?.lastActivityAt ?? self.startedAt)})`);
   seen.add(self.name);
 
   for (const agent of store.getActiveAgents(state, dirs)) {
@@ -315,7 +318,7 @@ export function renderAgentsRow(
       (agent.reservations?.length ?? 0) > 0,
       stuckThresholdMs,
     );
-    const indicator = STATUS_INDICATORS[computed.status];
+    const indicator = AGENT_INDICATORS[computed.status] ?? "?";
     const idle = computed.idleFor ? ` ${computed.idleFor}` : "";
     rowParts.push(`${indicator} ${coloredAgentName(agent.name)}${idle}`);
     seen.add(agent.name);
@@ -323,7 +326,7 @@ export function renderAgentsRow(
 
   for (const worker of getLiveWorkers(cwd).values()) {
     if (seen.has(worker.taskId)) continue;
-    rowParts.push(`🔵 ${worker.name} ${formatTaskLabel(worker.taskId)}`);
+    rowParts.push(`▸ ${worker.name} ${formatTaskLabel(worker.taskId)}`);
     seen.add(worker.taskId);
   }
 
