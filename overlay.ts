@@ -547,8 +547,8 @@ export class MessengerOverlay implements Component, Focusable {
     return lines.join("\n");
   }
 
-  render(_width: number): string[] {
-    const w = this.width;
+  render(width: number): string[] {
+    const w = width || this.width;
     const innerW = w - 2;
     const sectionW = innerW - 2;
     const border = (s: string) => this.theme.fg("dim", s);

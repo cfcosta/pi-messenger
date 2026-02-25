@@ -84,8 +84,8 @@ export class MessengerConfigOverlay implements Component, Focusable {
     this.statusMessage = `Removed: ${removed.split("/").pop()}`;
   }
 
-  render(_width: number): string[] {
-    const w = this.width;
+  render(width: number): string[] {
+    const w = width || this.width;
     const innerW = w - 2;
     const lines: string[] = [];
     const cwd = process.cwd();
