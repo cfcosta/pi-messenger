@@ -5,7 +5,6 @@
  * Uses file-based coordination - no daemon required.
  */
 
-import { homedir } from "node:os";
 import * as fs from "node:fs";
 import { join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
@@ -108,7 +107,7 @@ export default function piMessengerExtension(pi: ExtensionAPI) {
 
   const nameTheme = { theme: config.nameTheme, customWords: config.nameWords };
 
-  const baseDir = process.env.PI_MESSENGER_DIR || join(homedir(), ".pi/agent/messenger");
+  const baseDir = process.env.PI_MESSENGER_DIR || join(process.cwd(), ".pi", "messenger");
   const dirs: Dirs = {
     base: baseDir,
     registry: join(baseDir, "registry"),
@@ -761,7 +760,7 @@ Usage (action-based API - preferred):
     }
 
     state.isHuman = ctx.hasUI;
-    try { fs.rmSync(join(homedir(), ".pi/agent/messenger/feed.jsonl"), { force: true }); } catch {}
+
 
     const shouldAutoRegister = config.autoRegister || 
       matchesAutoRegisterPath(process.cwd(), config.autoRegisterPaths);
