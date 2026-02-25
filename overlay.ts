@@ -333,7 +333,7 @@ export class MessengerOverlay implements Component, Focusable {
     const tasks = crewStore.getTasks(this.cwd);
     const task = tasks[this.crewViewState.selectedTaskIndex];
 
-    if (matchesKey(data, "right")) {
+    if (matchesKey(data, "right") || matchesKey(data, "l")) {
       if (this.crewViewState.mode === "detail") {
         navigateTask(this.crewViewState, 1, tasks.length);
         this.crewViewState.detailScroll = 0;
@@ -343,7 +343,7 @@ export class MessengerOverlay implements Component, Focusable {
       return;
     }
 
-    if (matchesKey(data, "left")) {
+    if (matchesKey(data, "left") || matchesKey(data, "h")) {
       if (this.crewViewState.mode === "detail") {
         navigateTask(this.crewViewState, -1, tasks.length);
         this.crewViewState.detailScroll = 0;
@@ -353,7 +353,7 @@ export class MessengerOverlay implements Component, Focusable {
       return;
     }
 
-    if (matchesKey(data, "up")) {
+    if (matchesKey(data, "up") || matchesKey(data, "k")) {
       if (this.crewViewState.mode === "detail") {
         this.crewViewState.detailScroll = Math.max(0, this.crewViewState.detailScroll - 1);
         this.crewViewState.detailAutoScroll = false;
@@ -364,7 +364,7 @@ export class MessengerOverlay implements Component, Focusable {
       return;
     }
 
-    if (matchesKey(data, "down")) {
+    if (matchesKey(data, "down") || matchesKey(data, "j")) {
       if (this.crewViewState.mode === "detail") {
         this.crewViewState.detailScroll++;
         this.crewViewState.detailAutoScroll = false;

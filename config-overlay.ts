@@ -45,7 +45,7 @@ export class MessengerConfigOverlay implements Component, Focusable {
       return;
     }
 
-    if (matchesKey(data, "up")) {
+    if (matchesKey(data, "up") || matchesKey(data, "k")) {
       if (this.paths.length > 0) {
         this.selectedIndex = Math.max(0, this.selectedIndex - 1);
         this.tui.requestRender();
@@ -53,7 +53,7 @@ export class MessengerConfigOverlay implements Component, Focusable {
       return;
     }
 
-    if (matchesKey(data, "down")) {
+    if (matchesKey(data, "down") || matchesKey(data, "j")) {
       if (this.paths.length > 0) {
         this.selectedIndex = Math.min(this.paths.length - 1, this.selectedIndex + 1);
         this.tui.requestRender();
@@ -155,7 +155,7 @@ export class MessengerConfigOverlay implements Component, Focusable {
     }
 
     // Help
-    const help = "a add  d delete  ↑↓ navigate  Esc save & close";
+    const help = "a add  d delete  ↑↓/jk navigate  Esc save & close";
     lines.push(row(this.theme.fg("dim", help)));
 
     // Bottom border
