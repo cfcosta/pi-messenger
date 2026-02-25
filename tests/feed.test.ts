@@ -70,6 +70,7 @@ describe("feed", () => {
     expect(line).toContain("pass 2/3");
     expect(isCrewEvent("plan.pass.start")).toBe(true);
     expect(isCrewEvent("plan.done")).toBe(true);
+    expect(isCrewEvent("task.check")).toBe(true);
     expect(isCrewEvent("message")).toBe(false);
   });
 

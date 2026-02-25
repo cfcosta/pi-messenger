@@ -77,6 +77,22 @@ describe("crew/store", () => {
       expect(fs.existsSync(path.join(dirs.tasksDir, "task-2.md"))).toBe(true);
     });
 
+    it("persists outcome metadata on createTask", () => {
+      store.createPlan(cwd, "docs/PRD.md");
+      const task = store.createTask(cwd, "Task with outcome", "Desc", [], {
+        hypothesis: "Reduce setup drop-off",
+        metric: "setup_completion_rate",
+        target: ">= 10%",
+        checkWindow: "7d post-merge",
+      });
+
+      const loaded = store.getTask(cwd, task.id);
+      expect(loaded?.outcome?.hypothesis).toBe("Reduce setup drop-off");
+      expect(loaded?.outcome?.metric).toBe("setup_completion_rate");
+      expect(loaded?.outcome?.target).toBe(">= 10%");
+      expect(loaded?.outcome?.checkWindow).toBe("7d post-merge");
+    });
+
     it("getTasks sorts by numeric task ID (task-10 after task-9)", () => {
       store.createPlan(cwd, "docs/PRD.md");
       for (let i = 0; i < 10; i++) {

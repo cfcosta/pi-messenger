@@ -47,6 +47,8 @@ export async function execute(
       return taskReset(cwd, params, state);
     case "progress":
       return taskProgress(cwd, params, state);
+    case "check":
+      return taskCheck(cwd, params, state);
     case "revise":
       return taskRevise(cwd, params, state);
     case "revise-tree":
@@ -83,16 +85,19 @@ function taskCreate(cwd: string, params: CrewParams) {
     }
   }
 
-  const task = store.createTask(cwd, params.title, params.content, params.dependsOn);
+  const task = store.createTask(cwd, params.title, params.content, params.dependsOn, params.outcome);
 
   const depsText = task.depends_on.length > 0 
     ? `\n**Depends on:** ${task.depends_on.join(", ")}`
+    : "";
+  const outcomeText = task.outcome
+    ? `\n**Outcome hypothesis:** ${task.outcome.hypothesis}\n**Metric:** ${task.outcome.metric}${task.outcome.target ? `\n**Target:** ${task.outcome.target}` : ""}${task.outcome.checkWindow ? `\n**Check window:** ${task.outcome.checkWindow}` : ""}`
     : "";
 
   const text = `✅ Created task **${task.id}**
 
 **Title:** ${task.title}
-**Status:** ${task.status}${depsText}
+**Status:** ${task.status}${depsText}${outcomeText}
 
 Start with: \`pi_messenger({ action: "task.start", id: "${task.id}" })\``;
 
@@ -103,6 +108,7 @@ Start with: \`pi_messenger({ action: "task.start", id: "${task.id}" })\``;
       title: task.title,
       status: task.status,
       depends_on: task.depends_on,
+      outcome: task.outcome,
     }
   });
 }
@@ -296,10 +302,18 @@ function taskShow(cwd: string, params: CrewParams) {
     blocked: "🚫",
   }[task.status];
 
+  const outcomeSection = task.outcome
+    ? `\n\n## Outcome Loop\n**Hypothesis:** ${task.outcome.hypothesis}\n**Metric:** ${task.outcome.metric}${task.outcome.target ? `\n**Target:** ${task.outcome.target}` : ""}${task.outcome.checkWindow ? `\n**Check window:** ${task.outcome.checkWindow}` : ""}`
+    : "";
+  const checks = task.outcome_checks ?? [];
+  const checksSection = checks.length > 0
+    ? `\n\n## Outcome Checks\n${checks.map(c => `- ${c.at.slice(0, 10)} · **${c.verdict}**${c.value ? ` (${c.value})` : ""}${c.notes ? ` — ${c.notes}` : ""}`).join("\n")}`
+    : "";
+
   const text = `# Task ${task.id}: ${task.title}
 
 ${statusIcon} **Status:** ${task.status}${statusDetails}
-**Attempts:** ${task.attempt_count}${depsText}${progressSection}${specPreview}`;
+**Attempts:** ${task.attempt_count}${depsText}${progressSection}${specPreview}${outcomeSection}${checksSection}`;
 
   return result(text, {
     mode: "task.show",
@@ -318,6 +332,72 @@ function taskProgress(cwd: string, params: CrewParams, state: MessengerState) {
 
   store.appendTaskProgress(cwd, id, state.agentName || "unknown", message);
   return result(`Progress logged for ${id}`, { mode: "task.progress", id });
+}
+
+function taskCheck(cwd: string, params: CrewParams, state: MessengerState) {
+  const { id, observed } = params;
+  if (!id) return result("Error: id required for task.check", { mode: "task.check", error: "missing_id" });
+  if (!observed?.verdict) {
+    return result("Error: observed.verdict required for task.check (met|missed|inconclusive)", {
+      mode: "task.check",
+      error: "missing_observed_verdict",
+      id,
+    });
+  }
+
+  const task = store.getTask(cwd, id);
+  if (!task) return result(`Error: Task ${id} not found`, { mode: "task.check", error: "not_found", id });
+  if (task.status !== "done") {
+    return result(`Error: Task ${id} is ${task.status}. Outcome checks require completed tasks.`, {
+      mode: "task.check",
+      error: "invalid_status",
+      id,
+      status: task.status,
+    });
+  }
+
+  const check = {
+    at: new Date().toISOString(),
+    value: observed.value,
+    verdict: observed.verdict,
+    notes: observed.notes,
+    checked_by: state.agentName || "unknown",
+  };
+  const checks = [...(task.outcome_checks ?? []), check];
+  store.updateTask(cwd, id, { outcome_checks: checks });
+
+  let followUp: Task | null = null;
+  if (observed.verdict === "missed") {
+    const title = `Outcome follow-up: ${task.title}`;
+    const content = `# ${title}
+
+Original task: ${task.id}
+
+Expected outcome:
+- Hypothesis: ${task.outcome?.hypothesis ?? "(not specified)"}
+- Metric: ${task.outcome?.metric ?? "(not specified)"}
+- Target: ${task.outcome?.target ?? "(not specified)"}
+
+Observed:
+- Value: ${observed.value ?? "(not specified)"}
+- Notes: ${observed.notes ?? "(none)"}
+
+Goal: diagnose why the expected outcome was missed and implement the highest-leverage correction with tests.`;
+    followUp = store.createTask(cwd, title, content, [task.id]);
+  }
+
+  logFeedEvent(cwd, state.agentName || "unknown", "task.check", id,
+    `${observed.verdict}${observed.value ? ` (${observed.value})` : ""}`);
+
+  const text = `📊 Recorded outcome check for **${id}**\n\n**Verdict:** ${observed.verdict}${observed.value ? `\n**Observed value:** ${observed.value}` : ""}${observed.notes ? `\n**Notes:** ${observed.notes}` : ""}${followUp ? `\n\n🔁 Created corrective task: **${followUp.id}** (${followUp.title})` : ""}`;
+
+  return result(text, {
+    mode: "task.check",
+    id,
+    verdict: observed.verdict,
+    check,
+    followUpTaskId: followUp?.id,
+  });
 }
 
 // =============================================================================
@@ -347,7 +427,13 @@ function taskList(cwd: string) {
     const icon = { todo: "⬜", in_progress: "🔄", done: "✅", blocked: "🚫" }[task.status];
     const deps = task.depends_on.length > 0 ? ` → deps: ${task.depends_on.join(", ")}` : "";
     const assignee = task.assigned_to ? ` [${task.assigned_to}]` : "";
-    lines.push(`${icon} **${task.id}**: ${task.title}${assignee}${deps}`);
+    const latestCheck = task.outcome_checks && task.outcome_checks.length > 0
+      ? task.outcome_checks[task.outcome_checks.length - 1]?.verdict
+      : undefined;
+    const outcome = task.outcome
+      ? ` 📈${latestCheck ? `(${latestCheck})` : ""}`
+      : "";
+    lines.push(`${icon} **${task.id}**: ${task.title}${outcome}${assignee}${deps}`);
   }
 
   const done = tasks.filter(t => t.status === "done").length;
@@ -461,10 +547,17 @@ function taskDone(cwd: string, params: CrewParams, state: MessengerState) {
     }
   }
 
+  const evidenceWarning = evidence?.tests && evidence.tests.length > 0
+    ? ""
+    : "\n\n⚠️ No test evidence provided. Add `evidence.tests` for stronger reviewability.";
+  const outcomePrompt = completed.outcome
+    ? `\n\n📈 Outcome check pending. After ${completed.outcome.checkWindow ?? "deployment"}, run:\n\`pi_messenger({ action: "task.check", id: "${id}", observed: { verdict: "met|missed|inconclusive", value: "...", notes: "..." } })\``
+    : "";
+
   const text = `✅ Completed task **${id}**
 
 **Summary:** ${summary}
-**Progress:** ${plan?.completed_count}/${plan?.task_count}${nextSteps}`;
+**Progress:** ${plan?.completed_count}/${plan?.task_count}${nextSteps}${evidenceWarning}${outcomePrompt}`;
 
   return result(text, {
     mode: "task.done",

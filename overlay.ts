@@ -698,7 +698,7 @@ export class MessengerOverlay implements Component, Focusable {
   }
 
   private static readonly SIGNIFICANT_EVENTS = new Set<FeedEventType>([
-    "task.done", "task.block", "task.start", "message",
+    "task.done", "task.block", "task.start", "task.check", "message",
     "plan.done", "plan.failed", "task.revise", "task.revise-tree",
   ]);
 

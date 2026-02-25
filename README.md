@@ -242,7 +242,8 @@ Agent definitions live in `crew/agents/` within the extension. To customize one 
 | `task.list` | List all tasks |
 | `task.show` | Show task details (`id` required) |
 | `task.start` | Start a task (`id` required) |
-| `task.done` | Complete a task (`id` required, `summary` optional) |
+| `task.done` | Complete a task (`id` required, `summary` optional, supports `evidence`) |
+| `task.check` | Log post-merge outcome check (`id` + `observed.verdict` required). If verdict is `missed`, Crew auto-creates a corrective follow-up task. |
 | `task.block` | Block a task (`id` + `reason` required) |
 | `task.unblock` | Unblock a task (`id` required) |
 | `task.ready` | List tasks ready to work |

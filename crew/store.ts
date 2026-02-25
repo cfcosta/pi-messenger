@@ -7,7 +7,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execSync } from "node:child_process";
-import type { Plan, Task, TaskEvidence } from "./types.js";
+import type { Plan, Task, TaskEvidence, TaskOutcomeSpec } from "./types.js";
 import { allocateTaskId } from "./id-allocator.js";
 
 // =============================================================================
@@ -174,7 +174,8 @@ export function createTask(
   cwd: string,
   title: string,
   description?: string,
-  dependsOn?: string[]
+  dependsOn?: string[],
+  outcome?: TaskOutcomeSpec,
 ): Task {
   const id = allocateTaskId(cwd);
   const now = new Date().toISOString();
@@ -184,6 +185,7 @@ export function createTask(
     title,
     status: "todo",
     depends_on: dependsOn ?? [],
+    ...(outcome ? { outcome } : {}),
     created_at: now,
     updated_at: now,
     attempt_count: 0,
@@ -210,6 +212,7 @@ function normalizeTask(raw: Task): Task {
   return {
     ...raw,
     depends_on: Array.isArray(raw.depends_on) ? raw.depends_on : [],
+    outcome_checks: Array.isArray(raw.outcome_checks) ? raw.outcome_checks : undefined,
     attempt_count: typeof raw.attempt_count === "number" ? raw.attempt_count : 0,
   };
 }
@@ -412,6 +415,7 @@ export function resetTask(cwd: string, taskId: string, cascade: boolean = false)
     assigned_to: undefined,
     summary: undefined,
     evidence: undefined,
+    outcome_checks: undefined,
     blocked_reason: undefined,
     // Keep attempt_count for tracking
   });

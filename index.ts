@@ -365,6 +365,7 @@ Usage (action-based API - preferred):
   pi_messenger({ action: "task.split", id: "task-3", subtasks: [...] }) → Execute split
   pi_messenger({ action: "task.start", id: "task-1" })          → Start task
   pi_messenger({ action: "task.done", id: "task-1", summary: "..." })
+  pi_messenger({ action: "task.check", id: "task-1", observed: { verdict: "met" } })
   pi_messenger({ action: "task.reset", id: "task-1" })          → Reset task
   
   // Crew: Review
@@ -390,6 +391,17 @@ Usage (action-based API - preferred):
         tests: Type.Optional(Type.Array(Type.String())),
         prs: Type.Optional(Type.Array(Type.String()))
       }, { description: "Evidence for task.done" })),
+      outcome: Type.Optional(Type.Object({
+        hypothesis: Type.String(),
+        metric: Type.String(),
+        target: Type.Optional(Type.String()),
+        checkWindow: Type.Optional(Type.String())
+      }, { description: "Expected measurable impact for task.create (outcome loop)" })),
+      observed: Type.Optional(Type.Object({
+        value: Type.Optional(Type.String()),
+        verdict: StringEnum(["met", "missed", "inconclusive"]),
+        notes: Type.Optional(Type.String())
+      }, { description: "Observed outcome for task.check" })),
       content: Type.Optional(Type.String({ description: "Content for task spec" })),
       count: Type.Optional(Type.Number({ description: "Suggested number of subtasks for task.split" })),
       subtasks: Type.Optional(Type.Array(

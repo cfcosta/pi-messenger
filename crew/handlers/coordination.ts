@@ -86,7 +86,7 @@ export function buildDependencySection(cwd: string, task: Task, config: CrewConf
 // =============================================================================
 
 const ACTIVITY_EVENT_TYPES = new Set<string>([
-  "task.start", "task.done", "task.block", "task.reset",
+  "task.start", "task.done", "task.check", "task.block", "task.reset",
   "reserve", "release", "message",
 ]);
 
@@ -99,6 +99,7 @@ function formatFeedVerb(type: string): string {
   switch (type) {
     case "task.start": return "started";
     case "task.done": return "completed";
+    case "task.check": return "logged outcome for";
     case "task.block": return "blocked";
     case "task.reset": return "reset";
     case "reserve": return "reserved";

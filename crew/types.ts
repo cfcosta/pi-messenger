@@ -33,6 +33,23 @@ export interface TaskEvidence {
   prs?: string[];                // PR URLs
 }
 
+export type OutcomeVerdict = "met" | "missed" | "inconclusive";
+
+export interface TaskOutcomeSpec {
+  hypothesis: string;            // Expected user/business impact
+  metric: string;                // How impact is measured
+  target?: string;               // Target threshold (e.g. ">= 20%")
+  checkWindow?: string;          // When to check (e.g. "7d post-merge")
+}
+
+export interface TaskOutcomeCheck {
+  at: string;                    // ISO timestamp
+  value?: string;                // Observed metric value
+  verdict: OutcomeVerdict;
+  notes?: string;
+  checked_by?: string;
+}
+
 export interface Task {
   id: string;                    // task-N format
   title: string;
@@ -48,6 +65,8 @@ export interface Task {
   assigned_to?: string;          // Agent name currently working on it
   summary?: string;              // Completion summary from task.done
   evidence?: TaskEvidence;       // Evidence from task.done
+  outcome?: TaskOutcomeSpec;     // Expected measurable impact
+  outcome_checks?: TaskOutcomeCheck[]; // Post-merge signal checks
   blocked_reason?: string;       // Reason from task.block
   attempt_count: number;         // How many times attempted (for auto-block)
   last_review?: ReviewFeedback;  // Feedback from last review (for retry)
@@ -83,6 +102,14 @@ export interface CrewParams {
   // Completion
   summary?: string;
   evidence?: TaskEvidence;
+
+  // Outcome loop
+  outcome?: TaskOutcomeSpec;
+  observed?: {
+    value?: string;
+    verdict: OutcomeVerdict;
+    notes?: string;
+  };
 
   // Content
   content?: string;                // Task description/spec content

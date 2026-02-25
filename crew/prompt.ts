@@ -39,6 +39,19 @@ Implement this task following the crew-worker protocol:
 
 `;
 
+  if (task.outcome) {
+    prompt += `## Outcome Target
+
+**Hypothesis:** ${task.outcome.hypothesis}
+**Metric:** ${task.outcome.metric}
+${task.outcome.target ? `**Target:** ${task.outcome.target}
+` : ""}${task.outcome.checkWindow ? `**Check window:** ${task.outcome.checkWindow}
+` : ""}
+Capture evidence in your summary so a later \`task.check\` can verify impact.
+
+`;
+  }
+
   if (task.last_review) {
     prompt += `## ⚠️ Previous Review Feedback
 

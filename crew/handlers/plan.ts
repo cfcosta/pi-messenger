@@ -440,7 +440,7 @@ export async function execute(
 
   for (let i = 0; i < tasks.length; i++) {
     const task = tasks[i];
-    const created = store.createTask(cwd, task.title, task.description);
+    const created = store.createTask(cwd, task.title, task.description, [], task.outcome);
     createdTasks.push({ id: created.id, title: task.title, dependsOn: task.dependsOn });
     titleToId.set(task.title.toLowerCase(), created.id);
     titleToId.set(`task ${i + 1}`, created.id);
@@ -652,6 +652,12 @@ interface ParsedTask {
   title: string;
   description: string;
   dependsOn: string[];
+  outcome?: {
+    hypothesis: string;
+    metric: string;
+    target?: string;
+    checkWindow?: string;
+  };
 }
 
 function extractPlanSections(output: string): PlanSections | null {
@@ -698,11 +704,26 @@ function parseJsonTaskBlock(output: string): ParsedTask[] | null {
     if (!Array.isArray(parsed)) return null;
     const tasks = parsed
       .filter((t: Record<string, unknown>) => typeof t.title === "string" && t.title.trim().length > 0)
-      .map((t: Record<string, unknown>) => ({
-        title: (t.title as string).trim(),
-        description: typeof t.description === "string" ? t.description : "",
-        dependsOn: Array.isArray(t.dependsOn) ? t.dependsOn.filter((d: unknown) => typeof d === "string") : []
-      }));
+      .map((t: Record<string, unknown>) => {
+        const rawOutcome = typeof t.outcome === "object" && t.outcome !== null
+          ? t.outcome as Record<string, unknown>
+          : null;
+        const outcome = rawOutcome && typeof rawOutcome.hypothesis === "string" && typeof rawOutcome.metric === "string"
+          ? {
+              hypothesis: rawOutcome.hypothesis,
+              metric: rawOutcome.metric,
+              ...(typeof rawOutcome.target === "string" ? { target: rawOutcome.target } : {}),
+              ...(typeof rawOutcome.checkWindow === "string" ? { checkWindow: rawOutcome.checkWindow } : {}),
+            }
+          : undefined;
+
+        return {
+          title: (t.title as string).trim(),
+          description: typeof t.description === "string" ? t.description : "",
+          dependsOn: Array.isArray(t.dependsOn) ? t.dependsOn.filter((d: unknown) => typeof d === "string") : [],
+          outcome,
+        };
+      });
     return tasks.length > 0 ? tasks : null;
   } catch {
     return null;
