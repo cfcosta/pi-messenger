@@ -189,7 +189,7 @@ export function buildCoordinationInstructions(config: CrewConfig): string {
   const level = config.coordination;
   if (level === "none") return "";
 
-  const budget = config.messageBudgets?.[level] ?? (level === "chatty" ? 10 : 5);
+  const budget = config.messageBudgets?.[level] ?? (level === "chatty" ? 100 : 5);
 
   if (level === "minimal") {
     return `## Coordination

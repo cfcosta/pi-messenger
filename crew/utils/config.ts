@@ -93,7 +93,7 @@ const DEFAULT_CONFIG: CrewConfig = {
   work: { maxAttemptsPerTask: 5, maxWaves: 50, stopOnBlock: false, shutdownGracePeriodMs: 30000 },
   dependencies: "advisory",
   coordination: "chatty",
-  messageBudgets: { none: 0, minimal: 2, moderate: 5, chatty: 10 },
+  messageBudgets: { none: 0, minimal: 2, moderate: 5, chatty: 100 },
 };
 
 function loadJson(filePath: string): Record<string, unknown> {

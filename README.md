@@ -184,7 +184,7 @@ Full config reference (all fields optional — only set what you want to change)
 | `concurrency.max` | Maximum workers allowed (hard ceiling is 10) | `10` |
 | `dependencies` | Dependency scheduling mode: `advisory` or `strict` | `"advisory"` |
 | `coordination` | Worker coordination level: `none`, `minimal`, `moderate`, `chatty` | `"chatty"` |
-| `messageBudgets` | Max outgoing messages per worker per level (sends rejected after limit) | `{ none: 0, minimal: 2, moderate: 5, chatty: 10 }` |
+| `messageBudgets` | Max outgoing messages per worker per level (sends rejected after limit) | `{ none: 0, minimal: 2, moderate: 5, chatty: 100 }` |
 | `models.planner` | Model for planner agent | `anthropic/claude-opus-4-6` |
 | `models.worker` | Model for workers (overridden by per-task or per-wave `model` param) | `anthropic/claude-haiku-4-5` |
 | `models.reviewer` | Model for reviewer agent | `anthropic/claude-opus-4-6` |
