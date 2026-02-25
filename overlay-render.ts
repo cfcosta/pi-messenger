@@ -110,19 +110,19 @@ export function renderStatusBar(theme: Theme, cwd: string, width: number): strin
 
   if (!plan) {
     const liveCount = getLiveWorkers(cwd).size;
-    return truncateToWidth(`No active plan │ ⚙ ${liveCount}/${autonomousState.concurrency} workers`, width);
+    return truncateToWidth(`No active plan │ ${liveCount}/${autonomousState.concurrency} workers`, width);
   }
 
   const ready = crewStore.getReadyTasks(cwd, { advisory: crewConfig.dependencies === "advisory" });
   const progress = `${plan.completed_count}/${plan.task_count}`;
   const planLabel = crewStore.getPlanLabel(plan, 40);
-  let base = `📋 ${planLabel}: ${progress}`;
+  let base = `${planLabel}: ${progress}`;
   if (ready.length > 0) {
     const readyLabel = crewConfig.dependencies === "advisory" ? "available" : "ready";
     base += ` │ ${ready.length} ${readyLabel}`;
   }
   const liveCount = getLiveWorkers(cwd).size;
-  base += ` │ ⚙ ${liveCount}/${autonomousState.concurrency} workers`;
+  base += ` │ ${liveCount}/${autonomousState.concurrency} workers`;
   const coordLevel = crewConfig.coordination;
   base += ` │ ${crewConfig.dependencies} │ ${coordLevel}`;
 
@@ -155,7 +155,7 @@ export function renderWorkersSection(theme: Theme, cwd: string, width: number, m
     const tokens = info.progress.tokens > 1000
       ? `${(info.progress.tokens / 1000).toFixed(0)}k`
       : `${info.progress.tokens}`;
-    const line = `⚡ ${info.name} ${formatTaskLabel(info.taskId)}  ${activity}  ${theme.fg("dim", `${elapsed}  ${tokens} tok`)}`;
+    const line = `▸ ${info.name} ${formatTaskLabel(info.taskId)}  ${activity}  ${theme.fg("dim", `${elapsed}  ${tokens} tok`)}`;
     lines.push(truncateToWidth(line, width));
   }
   return lines;
@@ -481,7 +481,7 @@ export function renderDetailView(cwd: string, task: Task, width: number, height:
 
   if (task.status === "in_progress" && !live) {
     const startedText = task.started_at ? ` (started ${formatRelativeTime(task.started_at)})` : "";
-    lines.push(`⚠ Worker not running${startedText} — press [q] to stop and unassign`);
+    lines.push(`! Worker not running${startedText} — press [q] to stop and unassign`);
     lines.push("");
   }
 
@@ -523,7 +523,7 @@ export function renderDetailView(cwd: string, task: Task, width: number, height:
     }
 
     if (task.last_review) {
-      const icon = task.last_review.verdict === "SHIP" ? "✓" : task.last_review.verdict === "NEEDS_WORK" ? "✗" : "⚠";
+      const icon = task.last_review.verdict === "SHIP" ? "✓" : task.last_review.verdict === "NEEDS_WORK" ? "✗" : "!";
       lines.push(`Last Review: ${icon} ${task.last_review.verdict} (${formatRelativeTime(task.last_review.reviewed_at)})`);
       if (task.last_review.issues.length > 0) {
         lines.push("  Issues:");
@@ -600,10 +600,10 @@ function renderListStatusBar(cwd: string, task: Task): string {
 }
 
 function renderConfirmBar(taskId: string, label: string, type: "reset" | "cascade-reset" | "delete" | "cancel-planning"): string {
-  if (type === "cancel-planning") return "⚠ Cancel planning? [y] Confirm  [n] Cancel";
-  if (type === "reset") return `⚠ Reset ${taskId} \"${label}\"? [y] Confirm  [n] Cancel`;
-  if (type === "cascade-reset") return `⚠ Cascade reset ${taskId} and dependents? [y] Confirm  [n] Cancel`;
-  return `⚠ Delete ${taskId} \"${label}\"? [y] Confirm  [n] Cancel`;
+  if (type === "cancel-planning") return "! Cancel planning? [y] Confirm  [n] Cancel";
+  if (type === "reset") return `! Reset ${taskId} \"${label}\"? [y] Confirm  [n] Cancel`;
+  if (type === "cascade-reset") return `! Cascade reset ${taskId} and dependents? [y] Confirm  [n] Cancel`;
+  return `! Delete ${taskId} \"${label}\"? [y] Confirm  [n] Cancel`;
 }
 
 function renderBlockReasonBar(input: string): string {
