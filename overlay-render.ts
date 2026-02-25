@@ -296,6 +296,7 @@ function renderMessageLines(theme: Theme, event: FeedEvent, width: number): stri
 }
 
 export function renderAgentsRow(
+  theme: Theme,
   cwd: string,
   width: number,
   state: MessengerState,
@@ -307,9 +308,10 @@ export function renderAgentsRow(
   const seen = new Set<string>();
 
   const self = buildSelfRegistration(state);
-  rowParts.push(`* You (${idleLabel(self.activity?.lastActivityAt ?? self.startedAt)})`);
+  rowParts.push(`${theme.fg("accent", "*")} You (${idleLabel(self.activity?.lastActivityAt ?? self.startedAt)})`);
   seen.add(self.name);
 
+  const INDICATOR_COLORS: Record<string, string> = { active: "accent", idle: "warning", away: "warning", stuck: "error" };
   for (const agent of store.getActiveAgents(state, dirs)) {
     if (seen.has(agent.name)) continue;
     const computed = computeStatus(
@@ -319,14 +321,15 @@ export function renderAgentsRow(
       stuckThresholdMs,
     );
     const indicator = AGENT_INDICATORS[computed.status] ?? "?";
+    const color = INDICATOR_COLORS[computed.status] ?? "dim";
     const idle = computed.idleFor ? ` ${computed.idleFor}` : "";
-    rowParts.push(`${indicator} ${coloredAgentName(agent.name)}${idle}`);
+    rowParts.push(`${theme.fg(color, indicator)} ${coloredAgentName(agent.name)}${idle}`);
     seen.add(agent.name);
   }
 
   for (const worker of getLiveWorkers(cwd).values()) {
     if (seen.has(worker.taskId)) continue;
-    rowParts.push(`▸ ${worker.name} ${formatTaskLabel(worker.taskId)}`);
+    rowParts.push(`${theme.fg("accent", "▸")} ${worker.name} ${formatTaskLabel(worker.taskId)}`);
     seen.add(worker.taskId);
   }
 

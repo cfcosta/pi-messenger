@@ -51,7 +51,10 @@ export interface OverlayCallbacks {
 
 export class MessengerOverlay implements Component, Focusable {
   get width(): number {
-    return Math.max(40, process.stdout.columns ?? 90);
+    // Return a large value so the TUI always clamps to the actual terminal
+    // width via resolveOverlayLayout(). This ensures the overlay fills the
+    // full terminal and correctly resizes when the terminal dimensions change.
+    return 10000;
   }
   focused = false;
 
@@ -548,7 +551,7 @@ export class MessengerOverlay implements Component, Focusable {
   }
 
   render(width: number): string[] {
-    const w = width || this.width;
+    const w = width || Math.max(40, process.stdout.columns ?? 90);
     const innerW = w - 2;
     const sectionW = innerW - 2;
     const border = (s: string) => this.theme.fg("dim", s);
@@ -600,7 +603,7 @@ export class MessengerOverlay implements Component, Focusable {
       const hasWorkers = hasLiveWorkers(this.cwd);
 
       let workerLines = renderWorkersSection(this.theme, this.cwd, sectionW, workersLimit);
-      const agentsLine = renderAgentsRow(this.cwd, sectionW, this.state, this.dirs, this.stuckThresholdMs);
+      const agentsLine = renderAgentsRow(this.theme, this.cwd, sectionW, this.state, this.dirs, this.stuckThresholdMs);
       const agentsHeight = 2;
       const workersHeight = () => workerLines.length > 0 ? workerLines.length + 1 : 0;
       const available = contentHeight - workersHeight() - agentsHeight;
